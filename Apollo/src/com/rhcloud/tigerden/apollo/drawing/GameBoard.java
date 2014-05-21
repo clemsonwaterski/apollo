@@ -14,7 +14,6 @@ import android.view.View;
 
 public class GameBoard extends View {
 
-	// this is a test
 	private Paint p;
 	private List<Point> starField = null;
 	private int starAlpha = 80;
