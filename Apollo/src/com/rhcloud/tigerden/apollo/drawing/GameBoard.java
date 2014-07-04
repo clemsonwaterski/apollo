@@ -33,6 +33,10 @@ public class GameBoard extends View {
     
     private Bitmap bm1 = null;
     private Bitmap bm2 = null;
+
+    // Collision flag and point
+    private boolean collisionDetected = false;
+    private Point lastCollision = new Point(-1,-1);
     
     private Matrix m = null;
     
@@ -104,6 +108,14 @@ public class GameBoard extends View {
 	synchronized public int getSprite2Height(){
 		return sprite2Bounds.height();
 	}
+
+    synchronized public Point getLastCollision() {
+        return lastCollision;
+    }
+
+    synchronized public boolean wasCollisionDetected(){
+        return collisionDetected;
+    }
 	
 	
 	private void initializeStars(int maxX, int maxY) {
@@ -115,8 +127,35 @@ public class GameBoard extends View {
 			int y = r.nextInt(maxY - 5 + 1) + 5;
 			starField.add(new Point(x,y));
 		}
+
+        collisionDetected = false;
 		
 	}
+
+    private boolean checkForCollision() {
+        if (sprite1.x < 0 && sprite2.x < 0 && sprite1.y < 0 && sprite2.y < 0) return false;
+
+        Rect r1 = new Rect(sprite1.x, sprite1.y, sprite1.x + sprite1Bounds.width(), sprite1.y + sprite1Bounds.height());
+        Rect r2 = new Rect(sprite2.x, sprite2.y, sprite2.x + sprite2Bounds.width(), sprite2.y + sprite2Bounds.height());
+
+        Rect r3 = new Rect(r1);
+
+        if(r1.intersect(r2)){
+            for(int i = r1.left; i<r1.right; i++){
+                for(int j = r1.top; j<r1.bottom; j++){
+                    if(bm1.getPixel(i-r3.left,j-r3.top) != Color.TRANSPARENT) {  // Current pixel hits bm1
+                        if(bm2.getPixel(i-r2.left, j-r2.top) != Color.TRANSPARENT) {  // Current pixel hits bm2 as well
+                            // Learn this part...
+                            lastCollision = new Point(sprite2.x + i-r2.left, sprite2.y + j-r2.top);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        lastCollision = new Point(-1,-1);
+        return false;
+    }
 	
 	@Override
 	synchronized public void onDraw(Canvas canvas){
@@ -148,6 +187,17 @@ public class GameBoard extends View {
 		if(sprite2.x >= 0){
 			canvas.drawBitmap(bm2, sprite2.x, sprite2.y, null);
 		}
+
+        collisionDetected = checkForCollision();
+
+        if (collisionDetected) {
+            // if there is one let's draw a red X
+            p.setColor(Color.RED);
+            p.setAlpha(255);
+            p.setStrokeWidth(5);
+            canvas.drawLine(lastCollision.x - 5, lastCollision.y - 5, lastCollision.x + 5, lastCollision.y + 5, p);
+            canvas.drawLine(lastCollision.x - 5, lastCollision.y + 5, lastCollision.x + 5, lastCollision.y - 5, p);
+        }
 	}
 
 	
