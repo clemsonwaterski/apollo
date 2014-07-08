@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,7 +16,7 @@ import android.widget.TextView;
 
 import com.rhcloud.tigerden.apollo.drawing.GameBoard;
 
-public class MainActivity extends Activity implements OnClickListener {
+public class MainActivity extends Activity {
 	
 	private Handler frame = new Handler();
 	
@@ -36,8 +37,6 @@ public class MainActivity extends Activity implements OnClickListener {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		Handler h = new Handler();
-		((Button)findViewById(R.id.main_button)).setOnClickListener(this);
-		
 		h.postDelayed(new Runnable(){
 
 			@Override
@@ -149,10 +148,9 @@ public class MainActivity extends Activity implements OnClickListener {
 		return true;
 	}
 
-	@Override
-	public void onClick(View v) {
-		initGfx();
-	}
+    public void onClickReset(View v) {
+        initGfx();
+    }
 	
 	private Runnable frameUpdate = new Runnable() {
 
