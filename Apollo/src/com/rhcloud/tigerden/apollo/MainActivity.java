@@ -7,9 +7,11 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.rhcloud.tigerden.apollo.drawing.GameBoard;
 
@@ -23,6 +25,9 @@ public class MainActivity extends Activity implements OnClickListener {
 	private int sprite1MaxY;
 	private int sprite2MaxX;
 	private int sprite2MaxY;
+
+    // acceleration flag
+    private boolean isAccelerating = false;
 	
 	private static final int FRAME_RATE = 20;
 
@@ -41,6 +46,50 @@ public class MainActivity extends Activity implements OnClickListener {
 			}}, 1000);
 		
 	}
+
+    @Override
+    synchronized public boolean onTouchEvent(MotionEvent ev){
+        final int action = ev.getAction();
+        switch (action & MotionEvent.ACTION_MASK){
+            case MotionEvent.ACTION_DOWN:
+            case MotionEvent.ACTION_POINTER_DOWN:
+                isAccelerating = true;
+            break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_POINTER_UP:
+                isAccelerating = false;
+            break;
+        }
+        return true;
+    }
+
+    private void updateVelocity() {
+        int speed = 0;
+        int xDir;
+        int yDir;
+        if (sprite2Velocity.x > 0)
+            xDir = 1;
+        else
+            xDir = -1;
+
+        if (sprite2Velocity.y > 0)
+            yDir = 1;
+        else
+            yDir = -1;
+
+        if (isAccelerating)
+            speed = Math.abs(sprite2Velocity.x) + 1;
+        else
+            speed = Math.abs(sprite2Velocity.x) - 1;
+
+        if (speed > 5)
+            speed = 5;
+        if (speed < 1)
+            speed = 1;
+
+        sprite2Velocity.x = speed * xDir;
+        sprite2Velocity.y = speed * yDir;
+    }
 
 	synchronized public void initGfx() {
 		((GameBoard)findViewById(R.id.canvas)).resetStarField();
@@ -109,7 +158,16 @@ public class MainActivity extends Activity implements OnClickListener {
 
 		@Override
 		synchronized public void run() {
+            if (((GameBoard)findViewById(R.id.canvas)).wasCollisionDetected()) {
+                Point collisionPoint = ((GameBoard)findViewById(R.id.canvas)).getLastCollision();
+                if (collisionPoint.x > 0) {
+                    ((TextView)findViewById(R.id.last_collision)).setText("Last Collision XY (" + Integer.toString(collisionPoint.x) + "," + Integer.toString(collisionPoint.y) + ")");
+                }
+                return;
+            }
 			frame.removeCallbacks(frameUpdate);
+            updateVelocity();
+            ((TextView)findViewById(R.id.sprite_speed)).setText("Sprite Acceleration (" + Integer.toString(sprite2Velocity.x) + "," + Integer.toString(sprite2Velocity.y) + ")");
 			Point sprite1 = new Point(((GameBoard)findViewById(R.id.canvas)).getSprite1X(), ((GameBoard)findViewById(R.id.canvas)).getSprite1Y());
 			Point sprite2 = new Point(((GameBoard)findViewById(R.id.canvas)).getSprite2X(), ((GameBoard)findViewById(R.id.canvas)).getSprite2Y());
 			sprite1.x = sprite1.x + sprite1Velocity.x;
